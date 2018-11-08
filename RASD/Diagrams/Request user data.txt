@@ -1,0 +1,40 @@
+title Request user data
+
+
+loop Login is successful
+activate Third Party
+activate Data4Help
+Third Party->Data4Help:Login credentials
+alt Valid credentials
+Third Party<--Data4Help:Login ok
+
+else Invalid credentials
+Third Party<--Data4Help:Login Failed
+end
+end
+Third Party->Data4Help:User data request
+alt Existing user
+alt Data already requested
+Data4Help->Request:request_status()
+activate Request
+
+Data4Help<--Request:Status
+deactivateafter Request
+alt Request accepted
+Third Party<--Data4Help:User data
+else Request denied
+Third Party<--Data4Help:Access denied
+end
+else New request
+activate Request
+Data4Help->Request:<<Create request>>
+Request->User:Notify user
+activate User
+Request<--User:User reply
+deactivateafter User
+end
+else User not found
+Third Party<--Data4Help:User missing
+end
+participant User
+

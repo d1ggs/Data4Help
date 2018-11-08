@@ -14,24 +14,23 @@ end
 end
 Third Party->Data4Help:User data request
 alt Existing user
-alt Data already requested
-Data4Help->Request:request_status()
-activate Request
-
-Data4Help<--Request:Status
-deactivateafter Request
-alt Request accepted
-Third Party<--Data4Help:User data
-else Request denied
-Third Party<--Data4Help:Access denied
-end
-else New request
-activate Request
+alt New request
 Data4Help->Request:<<Create request>>
+activate Request
 Request->User:Notify user
 activate User
 Request<--User:User reply
-deactivateafter User
+deactivate User
+Data4Help<--Request:Request status updated
+else Data already requested
+Data4Help->Request:request_status()
+Data4Help<--Request:Status
+deactivateafter Request
+end
+alt Request accepted
+Third Party<--Data4Help:User data
+else request denied
+Third Party<--Data4Help:Access denied
 end
 else User not found
 Third Party<--Data4Help:User missing

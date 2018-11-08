@@ -1,0 +1,47 @@
+title Automated SOS
+
+participant Parameters Inspector
+participant Data Collector
+participant Elderly
+participant Ambulance Provider
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+activate Parameters Inspector
+activate Data Collector
+Parameters Inspector->Data Collector:getHealthStatus()
+
+Parameters Inspector<<--Data Collector:parameters
+
+
+Parameters Inspector->Elderly:getThreshold()
+activate Elderly
+Parameters Inspector<<--Elderly:threshold
+deactivate Elderly
+Parameters Inspector->Parameters Inspector:compareThreshold()
+activate Parameters Inspector
+
+
+Parameters Inspector->>Ambulance Provider:notifyEmergency()
+activate Ambulance Provider
+
+
+loop Elderly picked up
+Parameters Inspector->Data Collector:getLocation()
+Parameters Inspector<<--Data Collector:location
+Parameters Inspector-->>Ambulance Provider:sendLocation()
+opt ambulance reach elderly
+Parameters Inspector<<-Ambulance Provider:notifyUserPickedUp()
+end
+end

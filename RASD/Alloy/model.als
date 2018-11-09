@@ -1,75 +1,84 @@
--- TODO: Model Int type
+-- MODIFY CLASS DIAGRAM ACCORDINGLY
+open util/integer
+open util/boolean
+
 abstract sig Data {
-	userID: Int,
-	timestamp: Int
+  userID: String,
+  timestamp: Int
 }
 
 sig GroupData {
-	(0 or more) Data
+  data: set Data
 }
 
--- MODIFY CLASS DIAGRAM ACCORDINGLY
+-- Int used for simplicity, instead of float
 sig HealthStatus extends Data {
-	bloodPressure: Double,
-	heartRate: Int,
-	GSR: Double
+  bloodPressure: Int,
+  heartRate: Int,
+  GSR: Int
 }
 
--- TODO: Model double type
 sig Location extends Data {
-	coordX: Double,
-	coordY: Double
+  coordX: Int,
+  coordY: Int
 }
+
+abstract sig Gender {}
+one sig Male extends Gender {}
+one sig Female extends Gender {}
 
 sig User {
-	IDnumber: String,
-	personalData
+  IDnumber: String,
+  firstName: String,
+  lastName: String,
+  age: Int,
+  gender: Gender
 }
 
--- Don't know if it's possible to extend a non-abstract sig
 -- USED FOR AUTOMATEDSOS TESTCASE
-sig Elderly extends User { }
+sig Elderly extends User {}{ age > 60 }
 
 -- USED FOR TRACK4RUN TESTCASE
-sig Athlete extends User { }
+sig Athlete extends User {}
 
 sig ThirdParty {
-	ID: Int
+  ID: Int
 }
 
 -- USED FOR TRACK4RUN TESTCASE
-sig Organizer extends ThirdParty { }
+sig Organizer extends ThirdParty {}
 
 -- USED FOR DATA REQUESTS TESTCASES
-one RequestHandler {
-	(0 or more) IndividualReqPermission,
-	(0 or more) GroupedDataReq
+one sig RequestHandler {
+  permissions: set IndividualReqPermission,
+  groupDataSubscriptions: set GroupedDataReq
 }
 
--- TODO: Model Bool type
 sig IndividualReqPermission {
-	userID: String,
-	thirdPartyID: Int,
-	allowed: Bool,
-	pending: Bool
+  userID: String,
+  thirdPartyID: Int,
+  allowed: Bool,
+  pending: Bool
 }
 
 -- subscription with timed updates
 sig GroupedDataReq {
-	searchParameters,
-	thirdPartyID: Int,
-	updateInterval: Int
+  searchParameters, -- should we specify it?
+  thirdPartyID: Int,
+  updateInterval: Int
 }
 
 -- USED FOR AUTOMATEDSOS TESTCASE
-one DataCollector { }
+one sig DataCollector { }
 
 -- USED FOR AUTOMATEDSOS TESTCASE
-one ParametersInspector { }
+one sig ParametersInspector { }
 
 -- USED FOR TRACK4RUN TESTCASE
 sig Run {
-	startTime: Int,
-	endTime: Int,
-	track
+  startTime: Int,
+  endTime: Int,
+  --track
 }
+
+

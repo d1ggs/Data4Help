@@ -1,6 +1,5 @@
 title Request user data
 
-
 loop Login is successful
 activate Third Party
 activate Data4Help
@@ -12,28 +11,46 @@ else Invalid credentials
 Third Party<--Data4Help:Login Failed
 end
 end
-Third Party->Data4Help:User data request
+Third Party->RequestManager:User data request
+participant RequestManager
+activate RequestManager
 alt Existing user
 alt New request
-Data4Help->Request:<<Create request>>
+RequestManager->Request:<<Create request>>
+
 activate Request
-Request->User:Notify user
+RequestManager<--Request:request
+deactivate Request
+RequestManager->User:notifyUser()
+
 activate User
-Request<--User:User reply
+deactivate RequestManager
+RequestManager<--User:request preference
 deactivate User
-Data4Help<--Request:Request status updated
+activate RequestManager
+RequestManager->Request:setPermission()
+activate Request
+RequestManager<--Request:ok
+deactivate Request
+
+deactivateafter RequestManager
 else Data already requested
-Data4Help->Request:request_status()
-Data4Help<--Request:Status
-deactivateafter Request
+activate RequestManager
+RequestManager->Request:request_status()
+activate Request
+RequestManager<--Request:return status
+deactivate Request
+deactivateafter RequestManager
 end
-alt Request accepted
-Third Party<--Data4Help:User data
-else request denied
-Third Party<--Data4Help:Access denied
+activate RequestManager
+alt requestStatus == accepted
+RequestManager->RequestManager:fetch_data()
+Third Party<--RequestManager:return user data
+else requestStatus == denied
+Third Party<--RequestManager:access denied
 end
 else User not found
-Third Party<--Data4Help:User missing
+Third Party<--Data4Help:user missing
 end
 participant User
 

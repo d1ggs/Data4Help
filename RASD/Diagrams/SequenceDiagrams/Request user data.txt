@@ -21,13 +21,14 @@ RequestManager->Request:<<Create request>>
 activate Request
 RequestManager<--Request:request
 deactivate Request
-RequestManager->User:notifyUser()
 
-activate User
+
 deactivate RequestManager
-RequestManager<--User:request preference
-deactivate User
+RequestManager->>User:notifyUser()
+activate User
 activate RequestManager
+RequestManager<<--User:request preference
+deactivate User
 RequestManager->Request:setPermission()
 activate Request
 RequestManager<--Request:ok

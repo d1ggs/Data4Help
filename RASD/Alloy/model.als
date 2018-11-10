@@ -39,25 +39,22 @@ sig Elderly extends User {
   threshold: HealthStatus
 }{ age > 5 and threshold.timestamp = 0 }
 
--- USED FOR TRACK4RUN TESTCASE
-sig Athlete extends User {}
+sig Athlete extends User {
+  enrolledRuns: set Run
+}
 
 sig ThirdParty {
   ID: Int,
-  userData: set Data
+  userData: set Data,
+  groupData: set GroupData
 }
 
 one sig ExtAmbulanceProvider {
   peopleToRescue: set Elderly
 }
 
--- USED FOR TRACK4RUN TESTCASE
-sig Organizer extends ThirdParty {}
-
--- USED FOR DATA REQUESTS TESTCASES
 one sig RequestHandler {
-  singlePermissions: set IndividualReqPermission,
-  groupDataSubscriptions: set GroupedDataReq
+  singlePermissions: set IndividualReqPermission
 }
 
 sig IndividualReqPermission {
@@ -67,19 +64,10 @@ sig IndividualReqPermission {
   pending: Bool
 } { pending = True implies allowed = False }
 
--- subscription with timed updates
-sig GroupedDataReq {
-  --searchParameters, -- should we specify it?
-  thirdPartyID: Int,
-  --updateInterval: Int
-}
-
--- USED FOR TRACK4RUN TESTCASE
 sig Run {
   startTime: Int,
-  endTime: Int,
-  --track
-}
+  endTime: Int
+} { startTime > 0 and startTime < endTime }
  
 
 fact usersAreUnique {
@@ -103,10 +91,6 @@ fact DataAreUniqueInTime {
     hStatus1.userID = hStatus2.userID and hStatus1.timestamp = hStatus2.timestamp
 }
 
-fact ThirdPartyGroupDataConnection {
-  all groupR: GroupedDataReq | (some tp: ThirdParty | groupR.thirdPartyID = tp.ID)
-}
-
 fact IndividualPermissionsBelongToRequestHandler {
   all permission: IndividualReqPermission |
     (some rHandler: RequestHandler | permission in rHandler.singlePermissions)
@@ -117,16 +101,17 @@ fact IndividualPermissionsThirdPartyUserConnection {
     (some u: User, tp: ThirdParty | permission.userID = u.IDnumber and permission.thirdPartyID = tp.ID)
 }
 
-fact GroupDataRequestsBelongToRequestHandler {
-  all groupR: GroupedDataReq |
-    (some rHandler: RequestHandler | groupR in rHandler.groupDataSubscriptions)
-}
-
 fact thirdPartyCanAccessOnlyToGrantedData {
   all tp: ThirdParty | (
     all data: tp.userData | (
       some r: IndividualReqPermission | r.userID = data.userID and r.thirdPartyID = tp.ID
     )
+  )
+}
+
+fact ThirdPartyCanAccessOnlyToAnonymizedGroupData {
+  all tp: ThirdParty | (
+    all groupData: tp.groupData | #groupData.data > 4
   )
 }
 
@@ -142,19 +127,34 @@ fact ElderlyAmbulanceConnection {
   )
 }
 
+-- 3 is just a constant value representing "now"
+fact AthletesAreEnrolledOnlyInFutureRuns {
+  all ath: Athlete | (all enRun: ath.enrolledRuns | enRun.startTime > 3)
+}
+
+-- TODO: limit number of variables to not have too big instance models
 pred showThirdPartyWithUserData {
   some tp: ThirdParty | #tp.userData > 0 and
   some rHandler: RequestHandler | #rHandler.singlePermissions > 0
-  and no Run and no Organizer and no Athlete and no Elderly
-  and one User and one ThirdParty
+  and no Run and no Athlete and no Elderly
+  --and #ThirdParty = 1
 }
+
+-- TODO: create predicate for showing thirdParty with GroupData
 
 pred showAutomatedSOS {
   some ambulance: ExtAmbulanceProvider | #ambulance.peopleToRescue > 0
-  and no Organizer and no Athlete and no Run
+  and no Athlete and no Run
   and no ThirdParty and no GroupData
   and one User
 }
 
-run showThirdPartyWithUserData for 3 but 1 GroupData, 1 GroupedDataReq, 1 IndividualReqPermission
+pred showAthleteEnrolled {
+  some ath: Athlete | #ath.enrolledRuns > 0
+  and no ThirdParty and no Elderly and no GroupData and no IndividualReqPermission
+  and #Athlete > 1
+}
+
+run showThirdPartyWithUserData for 3
 -- run showAutomatedSOS for 3
+-- run showAthleteEnrolled for 3

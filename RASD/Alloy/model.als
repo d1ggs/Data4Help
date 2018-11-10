@@ -6,10 +6,6 @@ abstract sig Data {
   timestamp: Int
 } { timestamp >= 0 }
 
-sig GroupData {
-  data: set Data
-}
-
 -- Int used for simplicity, instead of float
 sig HealthStatus extends Data {
   bloodPressure: Int,
@@ -23,6 +19,10 @@ sig Location extends Data {
   coordY: Int
 }
 
+sig GroupData {
+  data: set Data
+}
+
 abstract sig Gender {}
 one sig Male extends Gender {}
 one sig Female extends Gender {}
@@ -32,13 +32,14 @@ sig User {
   IDnumber: Int,
   age: Int,
   gender: Gender
-} { age > 0 }
+} { IDnumber > 0 and age > 0 }
 
 -- timestamp = 0 used to assign a constant value to thresholds
 sig Elderly extends User {
   threshold: HealthStatus
 }{ age > 5 and threshold.timestamp = 0 }
 
+-- enrolledRuns: runs in which athlete will participate (in the future)
 sig Athlete extends User {
   enrolledRuns: set Run
 }
@@ -47,7 +48,7 @@ sig ThirdParty {
   ID: Int,
   userData: set Data,
   groupData: set GroupData
-}
+} { ID > 0 }
 
 one sig ExtAmbulanceProvider {
   peopleToRescue: set Elderly
@@ -78,57 +79,80 @@ fact thirdPartiesAreUnique {
   no disj tp1, tp2: ThirdParty | tp1.ID = tp2.ID
 }
 
+-- every instance of Data is associated to one user
 fact UserDataConnection {
   all data: Data | (some u: User | data.userID = u.IDnumber)
 }
 
 -- two health status data related to the same user can't have the same timestamp
 -- the same holds for location data
-fact DataAreUniqueInTime {
+fact DataHaveUniqueTimestamp {
   no disj loc1, loc2: Location | loc1.userID = loc2.userID and loc1.timestamp = loc2.timestamp
   and
   no disj hStatus1, hStatus2: HealthStatus |
     hStatus1.userID = hStatus2.userID and hStatus1.timestamp = hStatus2.timestamp
 }
 
+-- every IndividualReqPermission belongs to the RequestHandler
 fact IndividualPermissionsBelongToRequestHandler {
   all permission: IndividualReqPermission |
     (some rHandler: RequestHandler | permission in rHandler.singlePermissions)
 }
 
+-- every IndividualReqPermission is associated to a User and a ThirdParty
 fact IndividualPermissionsThirdPartyUserConnection {
   all permission: IndividualReqPermission |
     (some u: User, tp: ThirdParty | permission.userID = u.IDnumber and permission.thirdPartyID = tp.ID)
 }
 
+-- there are no two or more IndividualReqPermission associated to the same User and ThirdParty
+fact IndividualPermissionsThirdPartyUserAreUnique {
+  no disj perm1, perm2: IndividualReqPermission |
+    perm1.userID = perm2.userID and perm1.thirdPartyID = perm2.thirdPartyID
+}
+
+-- every ThirdParty has access only to specific users' data
+-- for which they have given permission
 fact thirdPartyCanAccessOnlyToGrantedData {
   all tp: ThirdParty | (
     all data: tp.userData | (
-      some r: IndividualReqPermission | r.userID = data.userID and r.thirdPartyID = tp.ID and r.allowed = True
+      some permission: IndividualReqPermission | 
+         permission.userID = data.userID and permission.thirdPartyID = tp.ID and permission.allowed = True
     )
   )
 }
 
---TODO fact  (no disj sData1, sData2: groupData.data | sData1.userID = sData2.userID )
+-- GroupData is a collection of different users' data
+fact DataWithinGroupDataBelongToDifferentUsers {
+  all groupData: GroupData |
+    (no disj sData1, sData2: groupData.data | sData1.userID = sData2.userID) 
+}
 
--- 3 represents the minimum number of data such that it is possible to anonymize it
+/*
+Every ThirdParty can access only to group data that is anonymized.
+The constant '3' represents the minimum number of data such that it is possible to anonymize it.
+In this model the procedure that removes personal information from users data is not considered
+*/
 fact ThirdPartyCanAccessOnlyToAnonymizedGroupData {
   all tp: ThirdParty | (all groupData: tp.groupData | #groupData.data > 3)
 }
 
+-- every Elderly in ExtAmbulanceProvider.peopleToRescue has HealthStatus beyond risk thresholds
+-- we consider the last HealthStatus present in the system (with regard to timestamp)
 fact ElderlyAmbulanceConnection {
   all amb: ExtAmbulanceProvider | (
     all old: amb.peopleToRescue | (
       some hStatus: HealthStatus | hStatus.userID = old.IDnumber and
                                                  (hStatus.bloodPressure > old.threshold.bloodPressure or
                                                  hStatus.GSR < old.threshold.GSR or
-                                                 hStatus.heartRate > old.threshold.heartRate) and
+                                                 hStatus.heartRate < old.threshold.heartRate) and
         (all hStatus2: HealthStatus | hStatus2 != hStatus implies hStatus2.timestamp < hStatus.timestamp)
     )
   )
 }
 
--- 3 is just a constant value representing "now"
+-- every Athlete is enrolled only to runs that have not begun yet
+-- the constant '3' represents the value "now"
 fact AthletesAreEnrolledOnlyInFutureRuns {
   all ath: Athlete | (all enRun: ath.enrolledRuns | enRun.startTime > 3)
 }
@@ -162,7 +186,7 @@ pred showAthleteEnrolled {
   and #Athlete > 1
 }
 
--- run showThirdPartyWithUserData for 3
--- run showThirdPartyWithGroupData for 3 but 5 Data
+run showThirdPartyWithUserData for 3
+-- run showThirdPartyWithGroupData for 3 but 5 Data, 5 User
 -- run showAutomatedSOS for 3
-run showAthleteEnrolled for 3
+-- run showAthleteEnrolled for 3

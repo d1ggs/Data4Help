@@ -25,17 +25,19 @@ Parameters Inspector->Data Collector:getHealthStatus()
 
 
 Parameters Inspector<--Data Collector:parameters
-Parameters Inspector->Elderly:getThreshold()
+Parameters Inspector->Elderly:getThresholds()
 activate Elderly
 
-Parameters Inspector<--Elderly:threshold
+Parameters Inspector<--Elderly:thresholds
 deactivate Elderly
-Parameters Inspector->Parameters Inspector:compareThreshold()
+Parameters Inspector->Parameters Inspector:compareWithThresholds()
 
 
 
 
 
+
+alt parameters below thresholds
 
 Parameters Inspector->Ambulance Provider:notifyEmergency()
 activate Parameters Inspector
@@ -48,6 +50,8 @@ opt ambulance reach elderly
 Parameters Inspector<--Ambulance Provider:notify user picked up
 deactivate Ambulance Provider
 deactivate Parameters Inspector
-
+end 
 end
+
+
 end

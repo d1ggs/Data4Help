@@ -109,20 +109,20 @@ fact thirdPartyCanAccessOnlyToGrantedData {
   )
 }
 
+--TODO fact  (no disj sData1, sData2: groupData.data | sData1.userID = sData2.userID )
+
 -- 3 represents the minimum number of data such that it is possible to anonymize it
 fact ThirdPartyCanAccessOnlyToAnonymizedGroupData {
-  all tp: ThirdParty | (
-    all groupData: tp.groupData | #groupData.data > 3
-  )
+  all tp: ThirdParty | (all groupData: tp.groupData | #groupData.data > 3)
 }
 
 fact ElderlyAmbulanceConnection {
   all amb: ExtAmbulanceProvider | (
     all old: amb.peopleToRescue | (
       some hStatus: HealthStatus | hStatus.userID = old.IDnumber and
-                                                 hStatus.bloodPressure > old.threshold.bloodPressure and
-                                                 hStatus.GSR < old.threshold.GSR and
-                                                 hStatus.heartRate > old.threshold.heartRate and
+                                                 (hStatus.bloodPressure > old.threshold.bloodPressure or
+                                                 hStatus.GSR < old.threshold.GSR or
+                                                 hStatus.heartRate > old.threshold.heartRate) and
         (all hStatus2: HealthStatus | hStatus2 != hStatus implies hStatus2.timestamp < hStatus.timestamp)
     )
   )
@@ -157,11 +157,12 @@ pred showAutomatedSOS {
 
 pred showAthleteEnrolled {
   some ath: Athlete | #ath.enrolledRuns > 0
+  and some sRun: Run | sRun.startTime < 3
   and no ThirdParty and no Elderly and no GroupData and no IndividualReqPermission
   and #Athlete > 1
 }
 
-run showThirdPartyWithUserData for 3
+-- run showThirdPartyWithUserData for 3
 -- run showThirdPartyWithGroupData for 3 but 5 Data
 -- run showAutomatedSOS for 3
--- run showAthleteEnrolled for 3
+run showAthleteEnrolled for 3

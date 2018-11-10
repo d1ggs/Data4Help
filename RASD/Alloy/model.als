@@ -104,14 +104,15 @@ fact IndividualPermissionsThirdPartyUserConnection {
 fact thirdPartyCanAccessOnlyToGrantedData {
   all tp: ThirdParty | (
     all data: tp.userData | (
-      some r: IndividualReqPermission | r.userID = data.userID and r.thirdPartyID = tp.ID
+      some r: IndividualReqPermission | r.userID = data.userID and r.thirdPartyID = tp.ID and r.allowed = True
     )
   )
 }
 
+-- 3 represents the minimum number of data such that it is possible to anonymize it
 fact ThirdPartyCanAccessOnlyToAnonymizedGroupData {
   all tp: ThirdParty | (
-    all groupData: tp.groupData | #groupData.data > 4
+    all groupData: tp.groupData | #groupData.data > 3
   )
 }
 
@@ -132,15 +133,20 @@ fact AthletesAreEnrolledOnlyInFutureRuns {
   all ath: Athlete | (all enRun: ath.enrolledRuns | enRun.startTime > 3)
 }
 
--- TODO: limit number of variables to not have too big instance models
 pred showThirdPartyWithUserData {
-  some tp: ThirdParty | #tp.userData > 0 and
-  some rHandler: RequestHandler | #rHandler.singlePermissions > 0
+  some tp: ThirdParty | #tp.userData > 1
+  and some permission: IndividualReqPermission | permission.allowed = False
   and no Run and no Athlete and no Elderly
-  --and #ThirdParty = 1
+  and #ThirdParty = 1
 }
 
--- TODO: create predicate for showing thirdParty with GroupData
+pred showThirdPartyWithGroupData {
+  some tp: ThirdParty | #tp.groupData > 0
+  and some rHandler: RequestHandler | #rHandler.singlePermissions = 0
+  and all gData: GroupData | (some tp: ThirdParty | gData in tp.groupData)
+  and no Run and no Athlete and no Elderly
+  and #ThirdParty = 1
+}
 
 pred showAutomatedSOS {
   some ambulance: ExtAmbulanceProvider | #ambulance.peopleToRescue > 0
@@ -156,5 +162,6 @@ pred showAthleteEnrolled {
 }
 
 run showThirdPartyWithUserData for 3
+-- run showThirdPartyWithGroupData for 3 but 5 Data
 -- run showAutomatedSOS for 3
 -- run showAthleteEnrolled for 3

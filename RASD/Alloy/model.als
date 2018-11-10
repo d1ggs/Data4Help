@@ -4,7 +4,7 @@ open util/boolean
 abstract sig Data {
   userID: Int,
   timestamp: Int
-}
+} { timestamp >= 0 }
 
 sig GroupData {
   data: set Data
@@ -15,8 +15,9 @@ sig HealthStatus extends Data {
   bloodPressure: Int,
   heartRate: Int,
   GSR: Int
-}
+} { GSR > 0 and heartRate > 0 and bloodPressure > 0 }
 
+-- Int used for simplicity, instead of float
 sig Location extends Data {
   coordX: Int,
   coordY: Int
@@ -26,17 +27,17 @@ abstract sig Gender {}
 one sig Male extends Gender {}
 one sig Female extends Gender {}
 
+-- IDnumber: Int used for simplicity, instead of String
 sig User {
   IDnumber: Int,
   age: Int,
-  gender: Gender,
-  ownData: set Data
+  gender: Gender
 } { age > 0 }
 
--- USED FOR AUTOMATEDSOS TESTCASE
+-- timestamp = 0 used to assign a constant value to thresholds
 sig Elderly extends User {
   threshold: HealthStatus
-}{ age > 60 }
+}{ age > 5 and threshold.timestamp = 0 }
 
 -- USED FOR TRACK4RUN TESTCASE
 sig Athlete extends User {}
@@ -73,12 +74,6 @@ sig GroupedDataReq {
   --updateInterval: Int
 }
 
--- USED FOR AUTOMATEDSOS TESTCASE
-one sig DataCollector { }
-
--- USED FOR AUTOMATEDSOS TESTCASE
-one sig ParametersInspector { }
-
 -- USED FOR TRACK4RUN TESTCASE
 sig Run {
   startTime: Int,
@@ -99,8 +94,13 @@ fact UserDataConnection {
   all data: Data | (some u: User | data.userID = u.IDnumber)
 }
 
-fact UserPermissionsConnection {
-  all permission: IndividualReqPermission | (some u: User | permission.userID = u.IDnumber)
+-- two health status data related to the same user can't have the same timestamp
+-- the same holds for location data
+fact DataAreUniqueInTime {
+  no disj loc1, loc2: Location | loc1.userID = loc2.userID and loc1.timestamp = loc2.timestamp
+  and
+  no disj hStatus1, hStatus2: HealthStatus |
+    hStatus1.userID = hStatus2.userID and hStatus1.timestamp = hStatus2.timestamp
 }
 
 fact ThirdPartyGroupDataConnection {
@@ -108,11 +108,18 @@ fact ThirdPartyGroupDataConnection {
 }
 
 fact IndividualPermissionsBelongToRequestHandler {
-  all permission: IndividualReqPermission | (some rHandler: RequestHandler | permission in rHandler.singlePermissions)
+  all permission: IndividualReqPermission |
+    (some rHandler: RequestHandler | permission in rHandler.singlePermissions)
+}
+
+fact IndividualPermissionsThirdPartyUserConnection {
+  all permission: IndividualReqPermission |
+    (some u: User, tp: ThirdParty | permission.userID = u.IDnumber and permission.thirdPartyID = tp.ID)
 }
 
 fact GroupDataRequestsBelongToRequestHandler {
-  all groupR: GroupedDataReq | (some rHandler: RequestHandler | groupR in rHandler.groupDataSubscriptions)
+  all groupR: GroupedDataReq |
+    (some rHandler: RequestHandler | groupR in rHandler.groupDataSubscriptions)
 }
 
 fact thirdPartyCanAccessOnlyToGrantedData {
@@ -123,10 +130,31 @@ fact thirdPartyCanAccessOnlyToGrantedData {
   )
 }
 
-
-pred show {
-  some tp: ThirdParty | #tp.userData > 0 and
-  some rHandler: RequestHandler | #rHandler.singlePermissions > 0
+fact ElderlyAmbulanceConnection {
+  all amb: ExtAmbulanceProvider | (
+    all old: amb.peopleToRescue | (
+      some hStatus: HealthStatus | hStatus.userID = old.IDnumber and
+                                                 hStatus.bloodPressure > old.threshold.bloodPressure and
+                                                 hStatus.GSR < old.threshold.GSR and
+                                                 hStatus.heartRate > old.threshold.heartRate and
+        (all hStatus2: HealthStatus | hStatus2 != hStatus implies hStatus2.timestamp < hStatus.timestamp)
+    )
+  )
 }
 
-run show for 3 but 0 Run, 0 Organizer
+pred showThirdPartyWithUserData {
+  some tp: ThirdParty | #tp.userData > 0 and
+  some rHandler: RequestHandler | #rHandler.singlePermissions > 0
+  and no Run and no Organizer and no Athlete and no Elderly
+  and one User and one ThirdParty
+}
+
+pred showAutomatedSOS {
+  some ambulance: ExtAmbulanceProvider | #ambulance.peopleToRescue > 0
+  and no Organizer and no Athlete and no Run
+  and no ThirdParty and no GroupData
+  and one User
+}
+
+run showThirdPartyWithUserData for 3 but 1 GroupData, 1 GroupedDataReq, 1 IndividualReqPermission
+-- run showAutomatedSOS for 3

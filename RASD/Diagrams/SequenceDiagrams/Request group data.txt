@@ -4,7 +4,7 @@ title Request group data
 loop Login is successful
 activate Third Party
 activate Data4Help
-Third Party->Data4Help:Login credentials
+Third Party->Data4Help:login()
 alt Valid credentials
 Third Party<--Data4Help:Login ok
 
@@ -12,9 +12,10 @@ else Invalid credentials
 Third Party<--Data4Help:Login Failed
 end
 end
-Third Party->Data4Help:Search parameters
+Third Party->Data4Help:search()
 else Data already requested
-Data4Help->Data4Help:Fetch data
+Data4Help->Data4Help:fetchData()
+Data4Help->Data4Help:removePersonalInformation()
 alt Data is anonymizable
 Third Party<--Data4Help:Group Data
 else Data is not anonymizable

@@ -3,7 +3,7 @@ title Request user data
 loop Login is successful
 activate Third Party
 activate Data4Help
-Third Party->Data4Help:Login credentials
+Third Party->Data4Help:login()
 alt Valid credentials
 Third Party<--Data4Help:Login ok
 
@@ -37,7 +37,7 @@ deactivate Request
 deactivateafter RequestManager
 else Data already requested
 activate RequestManager
-RequestManager->Request:request_status()
+RequestManager->Request:requestStatus()
 activate Request
 RequestManager<--Request:return status
 deactivate Request
@@ -45,7 +45,7 @@ deactivateafter RequestManager
 end
 activate RequestManager
 alt requestStatus == accepted
-RequestManager->RequestManager:fetch_data()
+RequestManager->RequestManager:fetchData()
 Third Party<--RequestManager:return user data
 else requestStatus == denied
 Third Party<--RequestManager:access denied

@@ -79,6 +79,10 @@ fact thirdPartiesAreUnique {
   no disj tp1, tp2: ThirdParty | tp1.ID = tp2.ID
 }
 
+fact OnlyThresholdsHaveTimestampZero {
+  all data: Data | !(all old: Elderly | old.threshold.userID = data.userID) implies data.timestamp > 0 
+}
+
 -- every instance of Data is associated to one user
 fact UserDataConnection {
   all data: Data | (some u: User | data.userID = u.IDnumber)
@@ -137,18 +141,16 @@ fact ThirdPartyCanAccessOnlyToAnonymizedGroupData {
   all tp: ThirdParty | (all groupData: tp.groupData | #groupData.data > 3)
 }
 
--- every Elderly in ExtAmbulanceProvider.peopleToRescue has HealthStatus beyond risk thresholds
--- we consider the last HealthStatus present in the system (with regard to timestamp)
-fact ElderlyAmbulanceConnection {
-  all amb: ExtAmbulanceProvider | (
-    all old: amb.peopleToRescue | (
-      some hStatus: HealthStatus | hStatus.userID = old.IDnumber and
+-- every Elderly, whose last HealthStatus exceed risk thresholds,
+-- is in ExtAmbulanceProvider.peopleToRescue
+fact ElderlyInNeedAreKnownByExtAmbulanceProvider {
+  all old: Elderly | (
+    some hStatus: HealthStatus | hStatus.userID = old.IDnumber and
                                                  (hStatus.bloodPressure > old.threshold.bloodPressure or
                                                  hStatus.GSR < old.threshold.GSR or
                                                  hStatus.heartRate < old.threshold.heartRate) and
         (all hStatus2: HealthStatus | hStatus2 != hStatus implies hStatus2.timestamp < hStatus.timestamp)
-    )
-  )
+  ) implies some amb: ExtAmbulanceProvider | old in amb.peopleToRescue
 }
 
 -- every Athlete is enrolled only to runs that have not begun yet

@@ -1,0 +1,56 @@
+title Manage Run
+
+
+loop Login is successful
+activate Run Organizer
+activate Track4Run
+Run Organizer->Track4Run:login()
+alt Valid credentials
+
+Run Organizer<--Track4Run:login ok
+else Invalid credentials
+Run Organizer<--Track4Run:login failed
+end
+end
+
+
+
+
+
+
+Run Organizer->Track4Run:scheduleRun()
+deactivate Run
+Track4Run->Run:new Run()
+activate Run
+Track4Run<--Run:run
+Run Organizer<--Track4Run:run created
+Run Organizer->Track4Run:definePath()
+Track4Run->Run:addPath()
+Track4Run<--Run:path
+deactivate Run
+Run Organizer<--Track4Run:path added
+Run Organizer->Track4Run:viewRunList()
+
+
+Run Organizer<--Track4Run:runs' list
+Run Organizer->Track4Run:selectRun()
+
+Track4Run->Run:getRun()
+activate Run
+Track4Run<--Run:run
+
+
+Run Organizer<--Track4Run:run details
+Run Organizer->Track4Run:showAthletes()
+Track4Run->Run:getAthletes()
+Track4Run<--Run:athletes
+Run Organizer<--Track4Run:athletes' list
+Run Organizer->Track4Run:selectAthlete()
+
+
+Track4Run->Athlete:getAthlete()
+
+activate Athlete
+Track4Run<--Athlete:athlete
+
+Run Organizer<--Track4Run:athlete details

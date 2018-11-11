@@ -1,0 +1,61 @@
+title RequestPermission user data
+
+loop Login is successful
+activate Third Party
+activate Data4Help Web Page
+Third Party->Data4Help Web Page:login()
+alt Valid credentials
+Third Party<--Data4Help Web Page:Login ok
+
+else Invalid credentials
+Third Party<--Data4Help Web Page:Login Failed
+end
+end
+participant RequestManager
+
+Third Party->Data4Help Web Page:userDataRequest()
+
+Data4Help Web Page->RequestManager:searchWithID()
+activate RequestManager
+alt Existing user
+alt New request
+RequestManager->RequestPermission:<<Create request>>
+
+activate RequestPermission
+RequestManager<--RequestPermission:request
+deactivate RequestPermission
+
+
+RequestManager->>User:notifyUser()
+activate User
+deactivateafter RequestManager
+RequestManager<<--User:request preference
+deactivate User
+activate RequestManager
+RequestManager->RequestPermission:setPermission()
+activate RequestPermission
+RequestManager<--RequestPermission:ok
+deactivate RequestPermission
+
+deactivateafter RequestManager
+else Data already requested
+activate RequestManager
+RequestManager->RequestPermission:requestStatus()
+activate RequestPermission
+RequestManager<--RequestPermission:return status
+deactivate RequestPermission
+deactivateafter RequestManager
+end
+activate RequestManager
+alt requestStatus == accepted
+RequestManager->RequestManager:fetchData()
+Data4Help Web Page<--RequestManager:return user data
+else requestStatus == denied
+Data4Help Web Page<--RequestManager:access denied
+end
+Third Party<--Data4Help Web Page:Request result
+else User not found
+Third Party<--Data4Help Web Page:user missing
+end
+participant User
+

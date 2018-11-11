@@ -1,0 +1,31 @@
+title Request group data
+
+
+
+loop Login is successful
+activate Third Party
+activate Data4Help Web Page
+Third Party->Data4Help Web Page:login()
+alt Valid credentials
+Third Party<--Data4Help Web Page:Login ok
+
+else Invalid credentials
+Third Party<--Data4Help Web Page:Login Failed
+end
+end
+Third Party->Data4Help Web Page:search()
+Data4Help Web Page->RequestManager:searchParameters()
+activate RequestManager
+RequestManager->RequestManager:fetchData()
+RequestManager->RequestManager:anonymize()
+alt Data is anonymizable
+Data4Help Web Page<--RequestManager:Group Data
+else Data is not anonymizable
+Data4Help Web Page<--RequestManager:Data not anonymizable error
+end
+else User not found
+participant RequestManager
+
+
+deactivateafter RequestManager
+Third Party<--Data4Help Web Page:Search result

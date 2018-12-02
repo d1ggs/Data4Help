@@ -1,0 +1,52 @@
+title Single User query and subscription
+
+participant ThirdParty
+participant WebAppRouter
+participant AuthenticationManager
+
+participantgroup #F6E4FB RequestManager
+participant DataSearchAssistant
+participant PermissionManager
+participant SingleUserSubscriptionManager
+end
+participantgroup #FBDBDB DBServices
+participant QueryManager
+participant PersistenceManager
+end 
+loop 
+ThirdParty->(1)WebAppRouter:authentication()
+WebAppRouter->AuthenticationManager:thirdPartyAuthentication()
+AuthenticationManager->QueryManager:fetchThirdPartyCredentials()
+AuthenticationManager<--QueryManager:Third Party credentials
+AuthenticationManager->AuthenticationManager:checkThirdPartyCredentials()
+break Valid Credentials
+WebAppRouter<--AuthenticationManager:Login OK
+ThirdParty(1)<--WebAppRouter:Login OK
+end
+WebAppRouter<--AuthenticationManager:Login KO
+ThirdParty(1)<--WebAppRouter:Login KO
+end
+ThirdParty->(1)WebAppRouter:requestSingleData()
+WebAppRouter->DataSearchAssistant:requestSingleData()
+DataSearchAssistant->PermissionManager:checkPermission()
+alt Permission existing
+DataSearchAssistant<--PermissionManager:Valid permission
+QueryManager<-DataSearchAssistant:fetchSingleData()
+QueryManager-->DataSearchAssistant:Single User Data
+WebAppRouter<--DataSearchAssistant:Single User Data
+ThirdParty(1)<--WebAppRouter:Single User Data
+
+opt Subscribe to new data
+ThirdParty->(1)WebAppRouter:addSingleSubscription()
+WebAppRouter->SingleUserSubscriptionManager:addSingleSubscription()
+SingleUserSubscriptionManager->PersistenceManager:newSingleSubscription()
+SingleUserSubscriptionManager<--PersistenceManager:Subscription OK
+WebAppRouter<--SingleUserSubscriptionManager:Subscription added
+ThirdParty(1)<--WebAppRouter:Subscription added
+end
+else Permission missing or denied
+DataSearchAssistant<--PermissionManager:Missing or invalid permission
+WebAppRouter<--DataSearchAssistant:No available data
+ThirdParty(1)<--WebAppRouter:No available data
+end
+

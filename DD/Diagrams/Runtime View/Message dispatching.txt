@@ -1,36 +1,50 @@
 title Message dispatching
+participantgroup #DBF6FA LiveDataSource
 participant Wearable
 participant DataCollector
 participant MessageDispatcher
+end
 participant QueryManager
 participant SingleSubscriptionManager
 participant ParametersInspector
 participant RunDataSource
+participantgroup #DBFAE8 WebApp
+participant MapViewer
 participant ThirdParty
+end
+participantgroup pisello
 activate MessageDispatcher
 activate Wearable
-Wearable->(1)DataCollector:pushData() 
+Wearable->>(1)DataCollector:pushData() 
 activate DataCollector
-DataCollector->QueryManager:saveRawData()
+DataCollector->>QueryManager:saveRawData()
 activate QueryManager
-DataCollector<--QueryManager:Data saved
-deactivate QueryManager
-DataCollector->MessageDispatcher:sendRawData()
+deactivateafter QueryManager
+DataCollector->>MessageDispatcher:sendRawData()
 deactivate DataCollector
 
 opt Data needs to be dispatched to components
 alt Single subscription
-MessageDispatcher->SingleSubscriptionManager:sendSingleUserData()
+MessageDispatcher->>SingleSubscriptionManager:sendSingleUserData()
 activate SingleSubscriptionManager
-SingleSubscriptionManager->ThirdParty:pushData()
-SingleSubscriptionManager<--ThirdParty:Data Received
+SingleSubscriptionManager->>ThirdParty:sendSingleUserData()
+activate ThirdParty
+deactivateafter ThirdParty
+deactivateafter SingleSubscriptionManager
 else Elderly
 MessageDispatcher->ParametersInspector:sendElderlyData()
 activate ParametersInspector
+activate MessageDispatcher
+MessageDispatcher<--ParametersInspector:Data received
 deactivateafter ParametersInspector
+
+deactivate MessageDispatcher
 else Run participant
-MessageDispatcher->RunDataSource:sendRunData()
+MessageDispatcher->>RunDataSource:sendRunData()
 activate RunDataSource
 deactivateafter RunDataSource
+RunDataSource->>MapViewer:sendRunnerPosition()
+activate MapViewer
+deactivateafter MapViewer
 end
 end

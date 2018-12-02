@@ -1,0 +1,24 @@
+title Ambulance dispatch
+participant MessageDispatcher
+activate ParametersInspector
+participant ParametersInspector
+participant AmbulanceAPI
+
+activate MessageDispatcher
+activate AmbulanceAPI
+MessageDispatcher->ParametersInspector:sendElderlyData()
+MessageDispatcher<--ParametersInspector:Data received
+ParametersInspector->ParametersInspector:checkParameters()
+opt Parameters are over the risk threshold
+ParametersInspector->AmbulanceAPI:Send sick user information
+activate ParametersInspector
+ParametersInspector<--AmbulanceAPI:Information received
+loop 
+ParametersInspector->AmbulanceAPI:Send position
+ParametersInspector<--AmbulanceAPI:Position received
+break 
+ParametersInspector<-AmbulanceAPI:userPickedUp()
+deactivate ParametersInspector
+end
+end
+end

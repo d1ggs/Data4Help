@@ -12,31 +12,31 @@ participantgroup #DBFAE8 WebApp
 participant MapViewer
 participant ThirdParty
 end
-participantgroup pisello
+activate DataCollector
+activate SingleSubscriptionManager
 activate MessageDispatcher
 activate Wearable
+activate ParametersInspector
+
 Wearable->>(1)DataCollector:pushData() 
-activate DataCollector
+
+deactivateafter Wearable
 DataCollector->>QueryManager:saveRawData()
 activate QueryManager
 deactivateafter QueryManager
 DataCollector->>MessageDispatcher:sendRawData()
-deactivate DataCollector
 
 opt Data needs to be dispatched to components
 alt Single subscription
 MessageDispatcher->>SingleSubscriptionManager:sendSingleUserData()
-activate SingleSubscriptionManager
+
 SingleSubscriptionManager->>ThirdParty:sendSingleUserData()
 activate ThirdParty
 deactivateafter ThirdParty
-deactivateafter SingleSubscriptionManager
 else Elderly
 MessageDispatcher->ParametersInspector:sendElderlyData()
-activate ParametersInspector
 activate MessageDispatcher
 MessageDispatcher<--ParametersInspector:Data received
-deactivateafter ParametersInspector
 
 deactivate MessageDispatcher
 else Run participant

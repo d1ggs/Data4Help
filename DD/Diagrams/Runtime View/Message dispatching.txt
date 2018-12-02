@@ -1,0 +1,36 @@
+title Message dispatching
+participant Wearable
+participant DataCollector
+participant MessageDispatcher
+participant QueryManager
+participant SingleSubscriptionManager
+participant ParametersInspector
+participant RunDataSource
+participant ThirdParty
+activate MessageDispatcher
+activate Wearable
+Wearable->(1)DataCollector:pushData() 
+activate DataCollector
+DataCollector->QueryManager:saveRawData()
+activate QueryManager
+DataCollector<--QueryManager:Data saved
+deactivate QueryManager
+DataCollector->MessageDispatcher:sendRawData()
+deactivate DataCollector
+
+opt Data needs to be dispatched to components
+alt Single subscription
+MessageDispatcher->SingleSubscriptionManager:sendSingleUserData()
+activate SingleSubscriptionManager
+SingleSubscriptionManager->ThirdParty:pushData()
+SingleSubscriptionManager<--ThirdParty:Data Received
+else Elderly
+MessageDispatcher->ParametersInspector:sendElderlyData()
+activate ParametersInspector
+deactivateafter ParametersInspector
+else Run participant
+MessageDispatcher->RunDataSource:sendRunData()
+activate RunDataSource
+deactivateafter RunDataSource
+end
+end

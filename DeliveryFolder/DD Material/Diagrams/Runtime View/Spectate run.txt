@@ -1,0 +1,31 @@
+title Spectate run
+participantgroup #DBFAE8 WebApp
+participant Spectator
+end
+participant WebAppRouter
+participant RunDataSource
+participantgroup #DBFAE8 WebApp
+participant MapViewer
+end
+participant QueryManager
+participant ExternalMapAPI
+activate RunDataSource
+activate Spectator
+activate WebAppRouter
+activate ExternalMapAPI
+Spectator->WebAppRouter:showRunList()
+WebAppRouter->QueryManager:fetchActiveRuns()
+activate QueryManager
+WebAppRouter<--QueryManager:Active Runs
+deactivate QueryManager
+Spectator<--WebAppRouter:Active Runs
+Spectator->*MapViewer:showLiveMap()
+activate MapViewer
+MapViewer->ExternalMapAPI:Get Map
+MapViewer<--ExternalMapAPI:Map data
+Spectator<--MapViewer:Reference to MapViewer object
+
+loop Spectator is connected to map page
+RunDataSource->>MapViewer:sendRunnerPosition()
+MapViewer->MapViewer:updateMapPositions()
+end

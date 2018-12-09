@@ -1,0 +1,69 @@
+title Single User query and subscription
+
+participant ThirdParty
+participant WebAppRouter
+participant AuthenticationManager
+
+participantgroup #F6E4FB RequestManager
+participant DataSearchAssistant
+participant PermissionManager
+participant SingleUserSubscriptionManager
+end
+participantgroup #FBDBDB DBServices
+participant QueryManager
+participant PersistenceManager
+end 
+activate WebAppRouter
+activate SingleUserSubscriptionManager
+loop 
+ThirdParty->(1)WebAppRouter:authentication()
+activate ThirdParty
+WebAppRouter->AuthenticationManager:thirdPartyAuthentication()
+activate AuthenticationManager
+AuthenticationManager->QueryManager:fetchThirdPartyCredentials()
+activate QueryManager
+AuthenticationManager<--QueryManager:Third Party credentials
+deactivate QueryManager
+AuthenticationManager->AuthenticationManager:checkThirdPartyCredentials()
+break Valid Credentials
+WebAppRouter<--AuthenticationManager:Login OK
+ThirdParty(1)<--WebAppRouter:Login OK
+end
+WebAppRouter<--AuthenticationManager:Login KO
+deactivate AuthenticationManager
+ThirdParty(1)<--WebAppRouter:Login KO
+end
+ThirdParty->(1)WebAppRouter:requestSingleData()
+WebAppRouter->DataSearchAssistant:requestSingleData()
+activate DataSearchAssistant
+DataSearchAssistant->PermissionManager:checkPermission()
+activate PermissionManager
+alt Permission existing
+DataSearchAssistant<--PermissionManager:Valid permission
+QueryManager<-DataSearchAssistant:fetchSingleData()
+activate QueryManager
+QueryManager-->DataSearchAssistant:Single User Data
+deactivate QueryManager
+WebAppRouter<--DataSearchAssistant:Single User Data
+ThirdParty(1)<--WebAppRouter:Single User Data
+
+opt Subscribe to new data
+ThirdParty->(1)WebAppRouter:addSingleSubscription()
+WebAppRouter->SingleUserSubscriptionManager:addSingleSubscription()
+SingleUserSubscriptionManager->PersistenceManager:newSingleSubscription()
+activate PersistenceManager
+SingleUserSubscriptionManager<--PersistenceManager:Subscription OK
+deactivate PersistenceManager
+WebAppRouter<--SingleUserSubscriptionManager:Subscription added
+
+ThirdParty(1)<--WebAppRouter:Subscription added
+end
+else Permission missing or denied
+DataSearchAssistant<--PermissionManager:Missing or invalid permission
+deactivate PermissionManager
+WebAppRouter<--DataSearchAssistant:No available data
+deactivate DataSearchAssistant
+ThirdParty(1)<--WebAppRouter:No available data
+deactivateafter ThirdParty
+end
+

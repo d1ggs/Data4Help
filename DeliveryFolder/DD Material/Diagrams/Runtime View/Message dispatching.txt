@@ -1,0 +1,50 @@
+title Message dispatching
+participantgroup #DBF6FA LiveDataSource
+participant Wearable
+participant DataCollector
+participant MessageDispatcher
+end
+participant QueryManager
+participant SingleSubscriptionManager
+participant ParametersInspector
+participant RunDataSource
+participantgroup #DBFAE8 WebApp
+participant MapViewer
+participant ThirdParty
+end
+activate DataCollector
+activate SingleSubscriptionManager
+activate MessageDispatcher
+activate Wearable
+activate ParametersInspector
+
+Wearable->>(1)DataCollector:pushData() 
+
+deactivateafter Wearable
+DataCollector->>QueryManager:saveRawData()
+activate QueryManager
+deactivateafter QueryManager
+DataCollector->>MessageDispatcher:sendRawData()
+
+opt Data needs to be dispatched to components
+alt Single subscription
+MessageDispatcher->>SingleSubscriptionManager:sendSingleUserData()
+
+SingleSubscriptionManager->>ThirdParty:sendSingleUserData()
+activate ThirdParty
+deactivateafter ThirdParty
+else Elderly
+MessageDispatcher->ParametersInspector:sendElderlyData()
+activate MessageDispatcher
+MessageDispatcher<--ParametersInspector:Data received
+
+deactivate MessageDispatcher
+else Run participant
+MessageDispatcher->>RunDataSource:sendRunData()
+activate RunDataSource
+deactivateafter RunDataSource
+RunDataSource->>MapViewer:sendRunnerPosition()
+activate MapViewer
+deactivateafter MapViewer
+end
+end

@@ -8,6 +8,7 @@ participant QueryManager
 participant SingleSubscriptionManager
 participant ParametersInspector
 participant RunDataSource
+participant WebAppRouter
 participantgroup #DBFAE8 WebApp
 participant MapViewer
 participant ThirdParty
@@ -17,33 +18,36 @@ activate SingleSubscriptionManager
 activate MessageDispatcher
 activate Wearable
 activate ParametersInspector
+activate WebAppRouter
 
-Wearable->>(1)DataCollector:pushData() 
+
+Wearable->>(1)DataCollector:pushData(userID, userData) 
 
 deactivateafter Wearable
-DataCollector->>QueryManager:saveRawData()
+DataCollector->>QueryManager:saveRawData(userData)
 activate QueryManager
 deactivateafter QueryManager
-DataCollector->>MessageDispatcher:sendRawData()
+DataCollector->>MessageDispatcher:sendRawData(userID, userData)
 
 opt Data needs to be dispatched to components
 alt Single subscription
-MessageDispatcher->>SingleSubscriptionManager:sendSingleUserData()
+MessageDispatcher->>SingleSubscriptionManager:sendSingleUserData(userID, userData)
 
-SingleSubscriptionManager->>ThirdParty:sendSingleUserData()
+SingleSubscriptionManager->>WebAppRouter:dataTransfer(data)
+WebAppRouter->>ThirdParty:dataTransfer(data)
 activate ThirdParty
 deactivateafter ThirdParty
 else Elderly
-MessageDispatcher->ParametersInspector:sendElderlyData()
+MessageDispatcher->ParametersInspector:sendElderlyData(elderlyID, hRate, bPressure, GSR, location)
 activate MessageDispatcher
-MessageDispatcher<--ParametersInspector:Data received
+MessageDispatcher<<--ParametersInspector:Data received
 
 deactivate MessageDispatcher
 else Run participant
-MessageDispatcher->>RunDataSource:sendRunData()
+MessageDispatcher->>RunDataSource:sendRunData(userID, latitude, longitude)
 activate RunDataSource
+RunDataSource->>MapViewer:sendRunnerPosition(participant, position)
 deactivateafter RunDataSource
-RunDataSource->>MapViewer:sendRunnerPosition()
 activate MapViewer
 deactivateafter MapViewer
 end

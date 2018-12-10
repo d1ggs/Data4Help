@@ -16,16 +16,16 @@ activate ExternalMapAPI
 Spectator->WebAppRouter:showRunList()
 WebAppRouter->QueryManager:fetchActiveRuns()
 activate QueryManager
-WebAppRouter<--QueryManager:Active Runs
+WebAppRouter<<--QueryManager:Active Runs
 deactivate QueryManager
-Spectator<--WebAppRouter:Active Runs
-Spectator->*MapViewer:showLiveMap()
+Spectator<<--WebAppRouter:Active Runs
+Spectator->*MapViewer:showLiveMap(mapID)
 activate MapViewer
 MapViewer->ExternalMapAPI:Get Map
-MapViewer<--ExternalMapAPI:Map data
-Spectator<--MapViewer:Reference to MapViewer object
+MapViewer<<--ExternalMapAPI:Map data
+Spectator<<--MapViewer:Reference to MapViewer object
 
 loop Spectator is connected to map page
-RunDataSource->>MapViewer:sendRunnerPosition()
+RunDataSource->>MapViewer:sendRunnerPosition(participant, position)
 MapViewer->MapViewer:updateMapPositions()
 end

@@ -2,31 +2,35 @@ title Permission request
 participantgroup #F6E4FB RequestManager
 participant DataSearchAssistant
 participant PermissionManager
+participant WebAppRouter
 end
 participant User
 participant PersistenceManager
 
-
+activate WebAppRouter
 activate PermissionManager
 activate PersistenceManager
 activate DataSearchAssistant
-DataSearchAssistant->PermissionManager:checkPermission()
+DataSearchAssistant->PermissionManager:checkPermission(userID, thirdPartyID)
 
 alt Permission granted
-DataSearchAssistant<--PermissionManager:Permission OK
+DataSearchAssistant<<--PermissionManager:Permission OK
 else Permission not found
-DataSearchAssistant<--PermissionManager:Permission missing
+DataSearchAssistant<<--PermissionManager:Permission missing
 
 
-PermissionManager->>User:askPermission()
+PermissionManager->>WebAppRouter:askPermission(thirdPartyID)
+WebAppRouter->>User:askPermission(thirdPartyID)
 activate User
 deactivateafter User
-PermissionManager<<-User:updatePermission()
+WebAppRouter<<-User:updatePermission(userID, thirdPartyID, allowed)
 activate User
 deactivateafter User
-PermissionManager->>PersistenceManager:newPermission()
-PermissionManager<--PersistenceManager:Permission stored
+PermissionManager<<-WebAppRouter:updatePermission(userID, thirdPartyID, allowed)
+
+PermissionManager->>PersistenceManager:newPermission(userID, thirdPartyID, allowed)
+PermissionManager<<--PersistenceManager:Permission stored
 else Permission already denied
-DataSearchAssistant<--PermissionManager:Permission denied
+DataSearchAssistant<<--PermissionManager:Permission denied
 
 end

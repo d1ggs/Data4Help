@@ -16,54 +16,54 @@ end
 activate WebAppRouter
 activate SingleUserSubscriptionManager
 loop 
-ThirdParty->(1)WebAppRouter:authentication()
+ThirdParty->(1)WebAppRouter:thirdPartyAuthentication(IDCode, password)
 activate ThirdParty
-WebAppRouter->AuthenticationManager:thirdPartyAuthentication()
+WebAppRouter->AuthenticationManager:thirdPartyAuthentication(IDCode, password)
 activate AuthenticationManager
-AuthenticationManager->QueryManager:fetchThirdPartyCredentials()
+AuthenticationManager->QueryManager:fetchThirdPartyCredentials(IDCode, password)
 activate QueryManager
-AuthenticationManager<--QueryManager:Third Party credentials
+AuthenticationManager<<--QueryManager:Third Party credentials
 deactivate QueryManager
 AuthenticationManager->AuthenticationManager:checkThirdPartyCredentials()
 break Valid Credentials
-WebAppRouter<--AuthenticationManager:Login OK
-ThirdParty(1)<--WebAppRouter:Login OK
+WebAppRouter<<--AuthenticationManager:Login OK
+ThirdParty(1)<<--WebAppRouter:Login OK
 end
-WebAppRouter<--AuthenticationManager:Login KO
+WebAppRouter<<--AuthenticationManager:Login KO
 deactivate AuthenticationManager
-ThirdParty(1)<--WebAppRouter:Login KO
+ThirdParty(1)<<--WebAppRouter:Login KO
 end
-ThirdParty->(1)WebAppRouter:requestSingleData()
-WebAppRouter->DataSearchAssistant:requestSingleData()
+ThirdParty->(1)WebAppRouter:requestSingleData(userID, thirdPartyID)
+WebAppRouter->DataSearchAssistant:requestSingleData(userID, thirdPartyID)
 activate DataSearchAssistant
-DataSearchAssistant->PermissionManager:checkPermission()
+DataSearchAssistant->PermissionManager:checkPermission(userID, thirdPartyID)
 activate PermissionManager
 alt Permission existing
-DataSearchAssistant<--PermissionManager:Valid permission
-QueryManager<-DataSearchAssistant:fetchSingleData()
+DataSearchAssistant<<--PermissionManager:Valid permission
+QueryManager<-DataSearchAssistant:fetchSingleData(userID)
 activate QueryManager
-QueryManager-->DataSearchAssistant:Single User Data
+QueryManager-->>DataSearchAssistant:Single User Data
 deactivate QueryManager
-WebAppRouter<--DataSearchAssistant:Single User Data
-ThirdParty(1)<--WebAppRouter:Single User Data
+WebAppRouter<<--DataSearchAssistant:Single User Data
+ThirdParty(1)<<--WebAppRouter:Single User Data
 
 opt Subscribe to new data
-ThirdParty->(1)WebAppRouter:addSingleSubscription()
-WebAppRouter->SingleUserSubscriptionManager:addSingleSubscription()
-SingleUserSubscriptionManager->PersistenceManager:newSingleSubscription()
+ThirdParty->(1)WebAppRouter:addSingleSubscription(userID, thirdPartyID)
+WebAppRouter->SingleUserSubscriptionManager:addSingleSubscription(userID, thirdPartyID)
+SingleUserSubscriptionManager->PersistenceManager:newSingleSubscription(userID, thirdPartyID)
 activate PersistenceManager
-SingleUserSubscriptionManager<--PersistenceManager:Subscription OK
+SingleUserSubscriptionManager<<--PersistenceManager:Subscription OK
 deactivate PersistenceManager
-WebAppRouter<--SingleUserSubscriptionManager:Subscription added
+WebAppRouter<<--SingleUserSubscriptionManager:Subscription added
 
-ThirdParty(1)<--WebAppRouter:Subscription added
+ThirdParty(1)<<--WebAppRouter:Subscription added
 end
 else Permission missing or denied
-DataSearchAssistant<--PermissionManager:Missing or invalid permission
+DataSearchAssistant<<--PermissionManager:Missing or invalid permission
 deactivate PermissionManager
-WebAppRouter<--DataSearchAssistant:No available data
+WebAppRouter<<--DataSearchAssistant:No available data
 deactivate DataSearchAssistant
-ThirdParty(1)<--WebAppRouter:No available data
+ThirdParty(1)<<--WebAppRouter:No available data
 deactivateafter ThirdParty
 end
 
